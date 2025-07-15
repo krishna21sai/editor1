@@ -1,79 +1,153 @@
-import React, { useState } from 'react';
+import React from 'react';
 import MonacoEditor from '@monaco-editor/react';
-import * as Babel from '@babel/standalone';
 import './App.css';
+import { FileSystemProvider, useFileSystem } from './FileSystemContext';
+import FileTree from './FileTree';
+import { useEsbuild, ensureEsbuildInitialized } from './useEsbuild';
+import { bundleCode } from './bundle';
 
-const DEFAULT_CODE = `
-function App() {
-  const [count, setCount] = React.useState(0);
+function EditorPane() {
+  const { files, selectedFile, updateFile } = useFileSystem();
+  const getLanguage = (filename) => filename.endsWith('.json') ? 'json' : 'javascript';
+
   return (
-    <div>
-      <h2>Hello, Krishna!</h2>
-      <p>You clicked {count} times</p>
-      <button onClick={() => setCount(count + 1)}>Click Me</button>
+    <div className="editor-pane">
+      <div className="editor-header">Code Editor</div>
+      <MonacoEditor
+        height="100%"
+        language={getLanguage(selectedFile)}
+        theme="vs-dark"
+        value={files[selectedFile] || ''}
+        onChange={(value) => updateFile(selectedFile, value)}
+        options={{
+          fontSize: 16,
+          minimap: { enabled: false },
+          fontFamily: 'Fira Mono, Consolas, Menlo, monospace',
+          scrollBeyondLastLine: false,
+          wordWrap: 'on',
+          automaticLayout: true,
+        }}
+      />
     </div>
   );
 }
-`.trim();
 
-export default function Playground() {
-  const [code, setCode] = useState(DEFAULT_CODE);
-  const [error, setError] = useState('');
-  const [Component, setComponent] = useState(() => () => null);
+function getImportedPackages(files) {
+  const importRegex = /import\s+[^'";]+from\s+['"]([^\.\/][^'";]*)['"]/g;
+  const pkgs = new Set();
+  for (const [filename, content] of Object.entries(files)) {
+    if (filename.endsWith('.js') || filename.endsWith('.jsx')) {
+      let match;
+      while ((match = importRegex.exec(content))) {
+        pkgs.add(match[1].split('/')[0]); // Handles scoped packages
+      }
+    }
+  }
+  return Array.from(pkgs);
+}
 
-  const runCode = () => {
+function getPackageJsonDeps(files) {
+  try {
+    const pkg = JSON.parse(files['package.json'] || '{}');
+    return pkg.dependencies ? Object.keys(pkg.dependencies) : [];
+  } catch {
+    return [];
+  }
+}
+
+function OutputPane({ files }) {
+  const [error, setError] = React.useState('');
+  const [bundledOutput, setBundledOutput] = React.useState('');
+  const iframeRef = React.useRef(null);
+
+  const runCode = async () => {
     setError('');
+    // Dependency enforcement
+    const importedPkgs = getImportedPackages(files);
+    const allowedPkgs = getPackageJsonDeps(files);
+    const missing = importedPkgs.filter(pkg => !allowedPkgs.includes(pkg) && pkg !== 'react' && pkg !== 'react-dom');
+    if (missing.length > 0) {
+      setError(`Missing dependencies in package.json: ${missing.join(', ')}`);
+      if (iframeRef.current) {
+        iframeRef.current.srcdoc = `<html><body><pre style='color: red;'>Missing dependencies in package.json: ${missing.join(', ')}</pre></body></html>`;
+      }
+      return;
+    }
     try {
-      const compiled = Babel.transform(code, { presets: ['react'] }).code;
-      // Wrap the compiled code in a function that takes React as an argument
-      // eslint-disable-next-line no-eval
-      const Comp = eval(`
-        (function(React) {
-          ${compiled};
-          return App;
-        })
-      `)(React);
-      setComponent(() => Comp);
+      await ensureEsbuildInitialized();
+      const output = await bundleCode(files);
+      setBundledOutput(output);
+      if (iframeRef.current) {
+        iframeRef.current.srcdoc = `
+          <html>
+            <body>
+              <div id="root"></div>
+              <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+              <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+              <script>
+                window.addEventListener('error', function(event) {
+                  window.parent.postMessage({ type: 'iframe-error', message: event.error ? event.error.stack : event.message }, '*');
+                });
+                try {
+                  ${output}
+                } catch (err) {
+                  document.body.innerHTML = '<pre style="color: red;">' + err + '</pre>';
+                  window.parent.postMessage({ type: 'iframe-error', message: err.stack }, '*');
+                }
+              </script>
+            </body>
+          </html>
+        `;
+      }
     } catch (err) {
       setError(err.message);
-      setComponent(() => () => null);
+      if (iframeRef.current) {
+        iframeRef.current.srcdoc = `<html><body><pre style='color: red;'>${err.message}</pre></body></html>`;
+      }
     }
   };
 
+  React.useEffect(() => {
+    const handleMessage = (event) => {
+      if (event.data && event.data.type === 'iframe-error') {
+        setError(event.data.message);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
   return (
-    <div className="split-root">
-      <div className="editor-pane">
-        <div className="editor-header">JSX Editor</div>
-        <MonacoEditor
-          height="100%"
-          defaultLanguage="javascript"
-          theme="vs-dark"
-          value={code}
-          onChange={value => setCode(value)}
-          options={{
-            fontSize: 16,
-            minimap: { enabled: false },
-            fontFamily: 'Fira Mono, Consolas, Menlo, monospace',
-            scrollBeyondLastLine: false,
-            wordWrap: 'on',
-            automaticLayout: true,
-          }}
+    <div className="output-pane">
+      <div className="output-header">Live Output</div>
+      <div className="output-content" style={{ height: '100%' }}>
+        <iframe
+          ref={iframeRef}
+          title="output"
+          sandbox="allow-scripts"
+          style={{ width: '100%', height: '100%', border: 'none', background: 'white' }}
         />
-        <button
-          className="run-btn"
-          onClick={runCode}
-        >Run ▶</button>
+        {error && <pre className="error-msg">{error}</pre>}
       </div>
-      <div className="output-pane">
-        <div className="output-header">Live Output</div>
-        <div className="output-content">
-          {error ? (
-            <pre className="error-msg">{error}</pre>
-          ) : (
-            <Component />
-          )}
-        </div>
-      </div>
+      <button className="run-btn" onClick={runCode}>Run ▶</button>
     </div>
+  );
+}
+
+function OutputPaneWrapper() {
+  const { files } = useFileSystem();
+  return <OutputPane files={files} />;
+}
+
+export default function Playground() {
+  useEsbuild();
+  return (
+    <FileSystemProvider>
+      <div className="split-root">
+        <FileTree />
+        <EditorPane />
+        <OutputPaneWrapper />
+      </div>
+    </FileSystemProvider>
   );
 }
