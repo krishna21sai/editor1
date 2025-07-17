@@ -8,7 +8,12 @@ import { bundleCode } from './bundle';
 
 function EditorPane() {
   const { files, selectedFile, updateFile } = useFileSystem();
-  const getLanguage = (filename) => filename.endsWith('.json') ? 'json' : 'javascript';
+  const getLanguage = (filename) => {
+    if (filename.endsWith('.json')) return 'json';
+    if (filename.endsWith('.html')) return 'html';
+    if (filename.endsWith('.css')) return 'css';
+    return 'javascript';
+  };
 
   return (
     <div className="editor-pane">
@@ -77,27 +82,46 @@ function OutputPane({ files }) {
       await ensureEsbuildInitialized();
       const output = await bundleCode(files);
       setBundledOutput(output);
+      
+      // Use the actual index.html file from the virtual file system
+      let htmlContent = files['index.html'] || '';      
+      // If no index.html exists, create a basic one
+      if (!htmlContent) {
+        htmlContent = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>React Playground</title>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>`;
+      }
+      
+      // Insert React scripts and bundled code into the HTML
+      const scriptTags = `
+        <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+        <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+        <script>
+          window.addEventListener('error', function(event) {
+            window.parent.postMessage({ type: 'iframe-error', message: event.error ? event.error.stack : event.message }, '*');
+          });
+          try {
+            ${output}
+          } catch (err) {
+            document.body.innerHTML = '<pre style="color: red;">' + err + '</pre>';
+            window.parent.postMessage({ type: 'iframe-error', message: err.stack }, '*');
+          }
+        </script>
+      `;
+      
+      // Insert scripts before closing body tag
+      const finalHtml = htmlContent.replace('</body>', `${scriptTags}\n</body>`);
+      
       if (iframeRef.current) {
-        iframeRef.current.srcdoc = `
-          <html>
-            <body>
-              <div id="root"></div>
-              <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-              <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-              <script>
-                window.addEventListener('error', function(event) {
-                  window.parent.postMessage({ type: 'iframe-error', message: event.error ? event.error.stack : event.message }, '*');
-                });
-                try {
-                  ${output}
-                } catch (err) {
-                  document.body.innerHTML = '<pre style="color: red;">' + err + '</pre>';
-                  window.parent.postMessage({ type: 'iframe-error', message: err.stack }, '*');
-                }
-              </script>
-            </body>
-          </html>
-        `;
+        iframeRef.current.srcdoc = finalHtml;
       }
     } catch (err) {
       setError(err.message);
