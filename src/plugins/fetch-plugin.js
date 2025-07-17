@@ -3,9 +3,10 @@ export default function fetchPlugin(files) {
     name: 'fetch-plugin',
     setup(build) {
       build.onLoad({ filter: /.*/ }, async (args) => {
-        // ✅ Serve from in-memory files
         if (files[args.path]) {
-          const ext = args.path.endsWith('.json') ? 'json' : 'jsx';
+          let ext = 'jsx';
+          if (args.path.endsWith('.json')) ext = 'json';
+          else if (args.path.endsWith('.css')) ext = 'text';
           return {
             loader: ext,
             contents: files[args.path],
@@ -13,11 +14,12 @@ export default function fetchPlugin(files) {
           };
         }
 
-        // ✅ Otherwise, fetch from CDN
         try {
           const response = await fetch(args.path);
           const text = await response.text();
-          const ext = args.path.endsWith('.json') ? 'json' : 'jsx';
+          let ext = 'jsx';
+          if (args.path.endsWith('.json')) ext = 'json';
+          else if (args.path.endsWith('.css')) ext = 'text';
 
           return {
             loader: ext,

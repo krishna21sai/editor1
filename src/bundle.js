@@ -22,8 +22,10 @@
           '.js': 'jsx',
           '.jsx': 'jsx',
           '.json': 'json',
+          '.css': 'text',
         },
         metafile: true,
+        external: ['react', 'react-dom'],
       });
 
       return result.outputFiles[0].text;

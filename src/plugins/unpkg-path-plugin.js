@@ -22,6 +22,13 @@ export default function unpkgPathPlugin() {
               path: 'https://unpkg.com/react-dom@18/umd/react-dom.development.js',
             };
           }
+          if (args.path === 'react-router-dom') {
+            return {
+              namespace: 'a',
+              path: 'https://unpkg.com/react-router-dom@5.3.4/umd/react-router-dom.js',
+            };
+          }
+          
           // Entry or local file from virtual file system
           if (
             args.path.startsWith('./') ||
@@ -34,7 +41,7 @@ export default function unpkgPathPlugin() {
             let resolvedPath = args.path.replace(/^\.\//, '');
   
             // 👇 Append .jsx if no extension
-            if (!/\.(js|jsx|json|html)$/.test(resolvedPath)) {
+            if (!/\.(js|jsx|json|html|css)$/.test(resolvedPath)) {
               resolvedPath += '.jsx';
             }
   

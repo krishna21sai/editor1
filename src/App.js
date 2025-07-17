@@ -62,12 +62,10 @@ function getPackageJsonDeps(files) {
 
 function OutputPane({ files }) {
   const [error, setError] = React.useState('');
-  const [bundledOutput, setBundledOutput] = React.useState('');
   const iframeRef = React.useRef(null);
 
   const runCode = async () => {
     setError('');
-    // Dependency enforcement
     const importedPkgs = getImportedPackages(files);
     const allowedPkgs = getPackageJsonDeps(files);
     const missing = importedPkgs.filter(pkg => !allowedPkgs.includes(pkg) && pkg !== 'react' && pkg !== 'react-dom');
@@ -81,25 +79,48 @@ function OutputPane({ files }) {
     try {
       await ensureEsbuildInitialized();
       const output = await bundleCode(files);
-      setBundledOutput(output);
-      
+
       // Use the actual index.html file from the virtual file system
-      let htmlContent = files['index.html'] || '';      
+      let htmlContent = files['index.html'] || '';
       // If no index.html exists, create a basic one
       if (!htmlContent) {
         htmlContent = `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>React Playground</title>
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
-</html>`;
+        <html lang="en">
+          <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <title>React Playground</title>
+          </head>
+          <body>
+            <div id="root"></div>
+          </body>
+        </html>`;
       }
-      
+
+      // Find all imported CSS files in JS/JSX files
+      const cssImportRegex = /import\s+['"](.+\.css)['"]/g;
+      const importedCssFiles = new Set();
+      for (const [filename, content] of Object.entries(files)) {
+        if (filename.endsWith('.js') || filename.endsWith('.jsx')) {
+          let match;
+          while ((match = cssImportRegex.exec(content))) {
+            importedCssFiles.add(match[1]);
+          }
+        }
+      }
+
+      // Inject only imported CSS files
+      let cssTag = '';
+      for (const cssFile of importedCssFiles) {
+        const normalized = cssFile.replace(/^\.\//, '');
+        if (files[normalized]) {
+          cssTag += `<style>\n${files[normalized]}\n</style>\n`;
+        }
+      }
+
+      // Insert CSS before closing </head>
+      let htmlWithCss = htmlContent.replace('</head>', `${cssTag}\n</head>`);
+
       // Insert React scripts and bundled code into the HTML
       const scriptTags = `
         <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -116,10 +137,10 @@ function OutputPane({ files }) {
           }
         </script>
       `;
-      
+
       // Insert scripts before closing body tag
-      const finalHtml = htmlContent.replace('</body>', `${scriptTags}\n</body>`);
-      
+      const finalHtml = htmlWithCss.replace('</body>', `${scriptTags}\n</body>`);
+
       if (iframeRef.current) {
         iframeRef.current.srcdoc = finalHtml;
       }
