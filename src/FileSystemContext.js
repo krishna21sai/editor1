@@ -178,31 +178,91 @@ const FileSystemContext = createContext();
 export function FileSystemProvider({ children }) {
   const [files, setFiles] = useState(defaultFiles);
   const [selectedFile, setSelectedFile] = useState('index.jsx');
+  const [openTabs, setOpenTabs] = useState(['index.jsx']);
+  const [activeTab, setActiveTab] = useState('index.jsx');
 
   const addFile = (filename, content = '') => {
     setFiles(f => ({ ...f, [filename]: content }));
     setSelectedFile(filename);
+    // Add to open tabs if not already there
+    if (!openTabs.includes(filename)) {
+      setOpenTabs(tabs => [...tabs, filename]);
+    }
+    setActiveTab(filename);
   };
+
   const renameFile = (oldName, newName) => {
     setFiles(f => {
       const { [oldName]: oldContent, ...rest } = f;
       return { ...rest, [newName]: oldContent };
     });
     setSelectedFile(newName);
+    // Update tabs
+    setOpenTabs(tabs => tabs.map(tab => tab === oldName ? newName : tab));
+    setActiveTab(newName);
   };
+
   const deleteFile = (filename) => {
     setFiles(f => {
       const { [filename]: _, ...rest } = f;
       return rest;
     });
-    setSelectedFile(Object.keys(files).filter(f => f !== filename)[0] || '');
+    // Remove from open tabs
+    setOpenTabs(tabs => tabs.filter(tab => tab !== filename));
+    // If the deleted file was active, switch to next available tab
+    if (activeTab === filename) {
+      const remainingTabs = openTabs.filter(tab => tab !== filename);
+      const newActiveTab = remainingTabs[0] || Object.keys(files).filter(f => f !== filename)[0] || '';
+      setActiveTab(newActiveTab);
+      setSelectedFile(newActiveTab);
+    }
   };
+
   const updateFile = (filename, content) => {
     setFiles(f => ({ ...f, [filename]: content }));
   };
 
+  // Tab management functions
+  const openTab = (filename) => {
+    if (!openTabs.includes(filename)) {
+      setOpenTabs(tabs => [...tabs, filename]);
+    }
+    setActiveTab(filename);
+    setSelectedFile(filename);
+  };
+
+  const closeTab = (filename) => {
+    const newTabs = openTabs.filter(tab => tab !== filename);
+    setOpenTabs(newTabs);
+    
+    // If closing the active tab, switch to next available
+    if (activeTab === filename) {
+      const newActiveTab = newTabs[newTabs.length - 1] || newTabs[0] || '';
+      setActiveTab(newActiveTab);
+      setSelectedFile(newActiveTab);
+    }
+  };
+
+  const switchTab = (filename) => {
+    setActiveTab(filename);
+    setSelectedFile(filename);
+  };
+
   return (
-    <FileSystemContext.Provider value={{ files, selectedFile, setSelectedFile, addFile, renameFile, deleteFile, updateFile }}>
+    <FileSystemContext.Provider value={{ 
+      files, 
+      selectedFile, 
+      setSelectedFile, 
+      addFile, 
+      renameFile, 
+      deleteFile, 
+      updateFile,
+      openTabs,
+      activeTab,
+      openTab,
+      closeTab,
+      switchTab
+    }}>
       {children}
     </FileSystemContext.Provider>
   );

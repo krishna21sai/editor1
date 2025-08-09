@@ -3,11 +3,12 @@ import MonacoEditor from '@monaco-editor/react';
 import './App.css';
 import { FileSystemProvider, useFileSystem } from './FileSystemContext';
 import FileTree from './FileTree';
+import TabsBar from './TabsBar';
 import { useEsbuild, ensureEsbuildInitialized } from './useEsbuild';
 import { bundleCode } from './bundle';
 
 function EditorPane() {
-  const { files, selectedFile, updateFile } = useFileSystem();
+  const { files, activeTab, updateFile } = useFileSystem();
   const getLanguage = (filename) => {
     if (filename.endsWith('.json')) return 'json';
     if (filename.endsWith('.html')) return 'html';
@@ -17,13 +18,12 @@ function EditorPane() {
 
   return (
     <div className="editor-pane">
-      <div className="editor-header">Code Editor</div>
       <MonacoEditor
         height="100%"
-        language={getLanguage(selectedFile)}
+        language={getLanguage(activeTab)}
         theme="vs-dark"
-        value={files[selectedFile] || ''}
-        onChange={(value) => updateFile(selectedFile, value)}
+        value={files[activeTab] || ''}
+        onChange={(value) => updateFile(activeTab, value)}
         options={{
           fontSize: 16,
           minimap: { enabled: false },
@@ -38,7 +38,7 @@ function EditorPane() {
 }
 
 function getImportedPackages(files) {
-  const importRegex = /import\s+[^'";]+from\s+['"]([^\.\/][^'";]*)['"]/g;
+  const importRegex = /import\s+[^'";]+from\s+['"]([^./][^'";]*)['"]/g;
   const pkgs = new Set();
   for (const [filename, content] of Object.entries(files)) {
     if (filename.endsWith('.js') || filename.endsWith('.jsx')) {
@@ -184,14 +184,25 @@ function OutputPaneWrapper() {
   return <OutputPane files={files} />;
 }
 
+function MainEditorArea() {
+  return (
+    <div className="main-editor-area">
+      <TabsBar />
+      <div className="editor-output-container">
+        <EditorPane />
+        <OutputPaneWrapper />
+      </div>
+    </div>
+  );
+}
+
 export default function Playground() {
   useEsbuild();
   return (
     <FileSystemProvider>
       <div className="split-root">
         <FileTree />
-        <EditorPane />
-        <OutputPaneWrapper />
+        <MainEditorArea />
       </div>
     </FileSystemProvider>
   );
