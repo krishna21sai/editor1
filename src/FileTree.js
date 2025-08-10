@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useFileSystem } from './FileSystemContext';
 
 const FileIcon = ({ filename }) => {
@@ -17,12 +17,64 @@ const FolderIcon = ({ isOpen }) => (
   </span>
 );
 
+const ContextMenu = ({ x, y, filename, onClose, onRename, onDelete }) => {
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [onClose]);
+
+  const isProtected = filename === 'App.jsx' || filename === 'index.jsx' || filename === 'index.html';
+
+  return (
+    <div
+      ref={menuRef}
+      className="context-menu"
+      style={{
+        position: 'fixed',
+        top: y,
+        left: x,
+        zIndex: 1000,
+      }}
+    >
+      {!isProtected && (
+        <>
+          <div className="context-menu-item" onClick={() => onRename(filename)}>
+            <span className="context-menu-icon">✏️</span>
+            Rename
+          </div>
+          <div className="context-menu-item" onClick={() => onDelete(filename)}>
+            <span className="context-menu-icon">🗑️</span>
+            Delete
+          </div>
+        </>
+      )}
+      {isProtected && (
+        <div className="context-menu-item disabled">
+          <span className="context-menu-icon">🔒</span>
+          Protected file
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function FileTree() {
-  const { files, activeTab, openTab, createFile, deleteFile } = useFileSystem();
+  const { files, activeTab, openTab, createFile, deleteFile, updateFile } = useFileSystem();
   const [newFileName, setNewFileName] = useState('');
   const [showInput, setShowInput] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [showFolderInput, setShowFolderInput] = useState(false);
+  const [contextMenu, setContextMenu] = useState(null);
+  const [renamingFile, setRenamingFile] = useState(null);
+  const [renameValue, setRenameValue] = useState('');
   const [expandedFolders, setExpandedFolders] = useState({
     'src': true,
     'public': true,
@@ -59,19 +111,56 @@ export default function FileTree() {
     }
   };
 
+  const handleRename = (oldFilename) => {
+    setRenamingFile(oldFilename);
+    setRenameValue(oldFilename);
+    setContextMenu(null);
+  };
+
+  const handleRenameComplete = () => {
+    if (renameValue.trim() && renameValue !== renamingFile) {
+      const content = files[renamingFile];
+      createFile(renameValue.trim(), content);
+      deleteFile(renamingFile);
+    }
+    setRenamingFile(null);
+    setRenameValue('');
+  };
+
+  const handleDelete = (filename) => {
+    if (window.confirm(`Are you sure you want to delete ${filename}?`)) {
+      deleteFile(filename);
+    }
+    setContextMenu(null);
+  };
+
+  const handleContextMenu = (e, filename) => {
+    e.preventDefault();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      filename
+    });
+  };
+
   const toggleFolder = (folderName) => {
     setExpandedFolders(prev => ({ ...prev, [folderName]: !prev[folderName] }));
   };
 
-  const handleKeyPress = (e, isFolder = false) => {
+  const handleKeyPress = (e, isFolder = false, isRename = false) => {
     if (e.key === 'Enter') {
-      if (isFolder) {
+      if (isRename) {
+        handleRenameComplete();
+      } else if (isFolder) {
         handleCreateFolder();
       } else {
         handleCreateFile();
       }
     } else if (e.key === 'Escape') {
-      if (isFolder) {
+      if (isRename) {
+        setRenamingFile(null);
+        setRenameValue('');
+      } else if (isFolder) {
         setShowFolderInput(false);
         setNewFolderName('');
       } else {
@@ -165,21 +254,29 @@ export default function FileTree() {
       <div className="files-container">
         {/* Root Files */}
         {organizedFiles.root.map(filename => (
-          <div
-            key={filename}
-            className={`file-item ${activeTab === filename ? 'active' : ''}`}
-            onClick={() => openTab(filename)}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              if (filename !== 'App.jsx' && filename !== 'index.jsx') {
-                if (window.confirm(`Delete ${filename}?`)) {
-                  deleteFile(filename);
-                }
-              }
-            }}
-          >
-            <FileIcon filename={filename} />
-            <span className="file-name">{filename}</span>
+          <div key={filename}>
+            {renamingFile === filename ? (
+              <div className="input-container">
+                <input
+                  type="text"
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  onKeyDown={(e) => handleKeyPress(e, false, true)}
+                  onBlur={handleRenameComplete}
+                  autoFocus
+                  className="file-input"
+                />
+              </div>
+            ) : (
+              <div
+                className={`file-item ${activeTab === filename ? 'active' : ''}`}
+                onClick={() => openTab(filename)}
+                onContextMenu={(e) => handleContextMenu(e, filename)}
+              >
+                <FileIcon filename={filename} />
+                <span className="file-name">{filename}</span>
+              </div>
+            )}
           </div>
         ))}
 
@@ -196,21 +293,29 @@ export default function FileTree() {
             {expandedFolders[folderName] && (
               <div className="folder-contents">
                 {organizedFiles[folderName]?.map(filename => (
-                  <div
-                    key={filename}
-                    className={`file-item nested ${activeTab === filename ? 'active' : ''}`}
-                    onClick={() => openTab(filename)}
-                    onContextMenu={(e) => {
-                      e.preventDefault();
-                      if (filename !== 'App.jsx' && filename !== 'index.jsx') {
-                        if (window.confirm(`Delete ${filename}?`)) {
-                          deleteFile(filename);
-                        }
-                      }
-                    }}
-                  >
-                    <FileIcon filename={filename} />
-                    <span className="file-name">{filename}</span>
+                  <div key={filename}>
+                    {renamingFile === filename ? (
+                      <div className="input-container nested">
+                        <input
+                          type="text"
+                          value={renameValue}
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          onKeyDown={(e) => handleKeyPress(e, false, true)}
+                          onBlur={handleRenameComplete}
+                          autoFocus
+                          className="file-input"
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className={`file-item nested ${activeTab === filename ? 'active' : ''}`}
+                        onClick={() => openTab(filename)}
+                        onContextMenu={(e) => handleContextMenu(e, filename)}
+                      >
+                        <FileIcon filename={filename} />
+                        <span className="file-name">{filename}</span>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -218,6 +323,17 @@ export default function FileTree() {
           </div>
         ))}
       </div>
+
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          filename={contextMenu.filename}
+          onClose={() => setContextMenu(null)}
+          onRename={handleRename}
+          onDelete={handleDelete}
+        />
+      )}
     </div>
   );
 }

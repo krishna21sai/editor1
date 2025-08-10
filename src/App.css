@@ -96,6 +96,47 @@
   margin-left: 8px;
 }
 
+.context-menu {
+  background: #383838;
+  border: 1px solid #5a5a5a;
+  border-radius: 3px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  min-width: 150px;
+  overflow: hidden;
+  z-index: 1000;
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  color: #cccccc;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.15s;
+}
+
+.context-menu-item:hover:not(.disabled) {
+  background: #094771;
+  color: #ffffff;
+}
+
+.context-menu-item.disabled {
+  color: #6a6a6a;
+  cursor: not-allowed;
+}
+
+.context-menu-icon {
+  margin-right: 8px;
+  font-size: 12px;
+  width: 16px;
+  text-align: center;
+}
+
+.input-container.nested {
+  padding-left: 24px;
+}
+
 .file-item {
   display: flex;
   align-items: center;
