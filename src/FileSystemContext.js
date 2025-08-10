@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from 'react';
 
 const defaultFiles = {
@@ -23,7 +22,7 @@ root.render(<App />);`,
 
 export default function App() {
   const [count, setCount] = useState(0);
-  
+
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
       <h1>Hello React Playground!</h1>
@@ -69,6 +68,8 @@ export const useFileSystem = () => {
 export const FileSystemProvider = ({ children }) => {
   const [files, setFiles] = useState(defaultFiles);
   const [activeTab, setActiveTab] = useState('App.jsx');
+  const [openTabs, setOpenTabs] = useState(['App.jsx', 'index.jsx', 'index.html']);
+
 
   const createFile = (filename, content = '') => {
     setFiles(prev => ({ ...prev, [filename]: content }));
@@ -77,13 +78,13 @@ export const FileSystemProvider = ({ children }) => {
 
   const deleteFile = (filename) => {
     if (filename === 'App.jsx' || filename === 'index.jsx') return;
-    
+
     setFiles(prev => {
       const newFiles = { ...prev };
       delete newFiles[filename];
       return newFiles;
     });
-    
+
     if (activeTab === filename) {
       const remainingFiles = Object.keys(files).filter(f => f !== filename);
       setActiveTab(remainingFiles[0] || 'App.jsx');
@@ -96,10 +97,14 @@ export const FileSystemProvider = ({ children }) => {
 
   const openTab = (filename) => {
     setActiveTab(filename);
+    if (!openTabs.includes(filename)) {
+      setOpenTabs(prev => [...prev, filename]);
+    }
   };
 
   const closeTab = (filename) => {
     if (filename === 'App.jsx' || filename === 'index.jsx') return;
+    setOpenTabs(prev => prev.filter(tab => tab !== filename));
     deleteFile(filename);
   };
 
@@ -108,6 +113,9 @@ export const FileSystemProvider = ({ children }) => {
       value={{
         files,
         activeTab,
+        setActiveTab,
+        openTabs,
+        setOpenTabs,
         createFile,
         deleteFile,
         updateFile,
