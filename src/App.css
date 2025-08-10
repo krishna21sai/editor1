@@ -6,23 +6,108 @@
 }
 
 .file-tree {
-  width: 250px;
+  width: 300px;
   background: #252526;
   color: #cccccc;
   border-right: 1px solid #3e3e42;
   overflow-y: auto;
+  font-family: 'Segoe UI', 'Monaco', 'Menlo', monospace;
+  font-size: 13px;
 }
 
 .file-tree-header {
-  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
   font-weight: bold;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: #cccccc;
+  background: #2d2d30;
   border-bottom: 1px solid #3e3e42;
 }
 
-.file-item {
-  padding: 5px 15px;
+.header-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.action-button {
+  background: none;
+  border: none;
+  color: #cccccc;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 12px;
+  opacity: 0.7;
+  transition: opacity 0.2s, background-color 0.2s;
+}
+
+.action-button:hover {
+  opacity: 1;
+  background: #3e3e42;
+}
+
+.input-container {
+  padding: 4px 12px;
+  background: #2d2d30;
+}
+
+.file-input {
+  width: 100%;
+  background: #3c3c3c;
+  border: 1px solid #007acc;
+  color: #cccccc;
+  padding: 4px 6px;
+  fontSize: 12px;
+  border-radius: 2px;
+  outline: none;
+}
+
+.files-container {
+  padding: 4px 0;
+}
+
+.folder-container {
+  margin-bottom: 2px;
+}
+
+.folder-header {
+  display: flex;
+  align-items: center;
+  padding: 4px 12px;
   cursor: pointer;
   user-select: none;
+  transition: background-color 0.15s;
+}
+
+.folder-header:hover {
+  background: #2a2d2e;
+}
+
+.folder-name {
+  font-size: 13px;
+  color: #cccccc;
+}
+
+.folder-contents {
+  margin-left: 8px;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  padding: 3px 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s;
+  border-radius: 0;
+}
+
+.file-item.nested {
+  padding-left: 24px;
 }
 
 .file-item:hover {
@@ -30,7 +115,14 @@
 }
 
 .file-item.active {
-  background: #37373d;
+  background: #094771;
+  color: #ffffff;
+}
+
+.file-name {
+  margin-left: 6px;
+  font-size: 13px;
+  color: inherit;
 }
 
 .main-editor-area {

@@ -11,7 +11,7 @@ export default function fetchPlugin(files) {
           return {
             loader: ext,
             contents: files[args.path],
-            resolveDir: '/', // Required
+            resolveDir: '/',
           };
         }
 
