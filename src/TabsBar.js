@@ -1,19 +1,20 @@
+
 import React from 'react';
 import { useFileSystem } from './FileSystemContext';
 
 export default function TabsBar() {
-  const { files, activeTab, openTab, closeTab } = useFileSystem();
+  const { openTabs, activeTab, setActiveTab, closeTab } = useFileSystem();
 
   return (
     <div className="tabs-bar">
-      {Object.keys(files).map(filename => (
+      {openTabs.map(filename => (
         <div
           key={filename}
           className={`tab ${activeTab === filename ? 'active' : ''}`}
-          onClick={() => openTab(filename)}
+          onClick={() => setActiveTab(filename)}
         >
           <span className="tab-name">{filename}</span>
-          {filename !== 'App.jsx' && filename !== 'index.jsx' && (
+          {filename !== 'App.jsx' && (
             <button
               className="tab-close"
               onClick={(e) => {
