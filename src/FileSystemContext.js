@@ -1,3 +1,5 @@
+
+```javascript
 import React, { createContext, useContext, useState } from 'react';
 
 const defaultFiles = {
@@ -69,11 +71,21 @@ export const FileSystemProvider = ({ children }) => {
   const [files, setFiles] = useState(defaultFiles);
   const [activeTab, setActiveTab] = useState('App.jsx');
   const [openTabs, setOpenTabs] = useState(['App.jsx', 'index.jsx', 'index.html']);
+  const [folders, setFolders] = useState(['src', 'public', 'components', 'utils']);
 
+  const createFile = (filename, content = '', folder = null) => {
+    const fullPath = folder ? `${folder}/${filename}` : filename;
+    setFiles(prev => ({ ...prev, [fullPath]: content }));
+    setActiveTab(fullPath);
+    if (!openTabs.includes(fullPath)) {
+      setOpenTabs(prev => [...prev, fullPath]);
+    }
+  };
 
-  const createFile = (filename, content = '') => {
-    setFiles(prev => ({ ...prev, [filename]: content }));
-    setActiveTab(filename);
+  const createFolder = (folderName) => {
+    if (!folders.includes(folderName)) {
+      setFolders(prev => [...prev, folderName]);
+    }
   };
 
   const deleteFile = (filename) => {
@@ -85,11 +97,39 @@ export const FileSystemProvider = ({ children }) => {
       return newFiles;
     });
 
-    // Remove from open tabs
     setOpenTabs(prev => prev.filter(tab => tab !== filename));
 
     if (activeTab === filename) {
       const remainingTabs = openTabs.filter(tab => tab !== filename);
+      setActiveTab(remainingTabs[0] || 'App.jsx');
+    }
+  };
+
+  const deleteFolder = (folderName) => {
+    if (['src', 'public'].includes(folderName)) return; // Protect core folders
+
+    // Delete all files in the folder
+    const filesToDelete = Object.keys(files).filter(filename => 
+      filename.startsWith(`${folderName}/`)
+    );
+    
+    setFiles(prev => {
+      const newFiles = { ...prev };
+      filesToDelete.forEach(filename => {
+        delete newFiles[filename];
+      });
+      return newFiles;
+    });
+
+    // Remove folder
+    setFolders(prev => prev.filter(folder => folder !== folderName));
+
+    // Close tabs for deleted files
+    setOpenTabs(prev => prev.filter(tab => !filesToDelete.includes(tab)));
+
+    // Switch active tab if needed
+    if (filesToDelete.includes(activeTab)) {
+      const remainingTabs = openTabs.filter(tab => !filesToDelete.includes(tab));
       setActiveTab(remainingTabs[0] || 'App.jsx');
     }
   };
@@ -109,7 +149,6 @@ export const FileSystemProvider = ({ children }) => {
     if (filename === 'App.jsx' || filename === 'index.jsx' || filename === 'index.html') return;
     setOpenTabs(prev => prev.filter(tab => tab !== filename));
     
-    // If closing the active tab, switch to another tab
     if (activeTab === filename) {
       const remainingTabs = openTabs.filter(tab => tab !== filename);
       setActiveTab(remainingTabs[0] || 'App.jsx');
@@ -124,8 +163,11 @@ export const FileSystemProvider = ({ children }) => {
         setActiveTab,
         openTabs,
         setOpenTabs,
+        folders,
         createFile,
+        createFolder,
         deleteFile,
+        deleteFolder,
         updateFile,
         openTab,
         closeTab
@@ -135,3 +177,4 @@ export const FileSystemProvider = ({ children }) => {
     </FileSystemContext.Provider>
   );
 };
+```

@@ -1,4 +1,5 @@
 
+```javascript
 import React from 'react';
 import { useFileSystem } from './FileSystemContext';
 
@@ -30,3 +31,4 @@ export default function TabsBar() {
     </div>
   );
 }
+```
