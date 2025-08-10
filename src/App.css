@@ -1,250 +1,49 @@
+
 .split-root {
   display: flex;
   height: 100vh;
-  width: 100vw;
   background: #1e1e1e;
-  overflow: hidden;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
 }
 
-/* Sidebar Styles */
 .file-tree {
   width: 250px;
-  min-width: 200px;
-  max-width: 400px;
   background: #252526;
-  border-right: 1px solid #3c3c3c;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  resize: horizontal;
-  position: relative;
+  color: #cccccc;
+  border-right: 1px solid #3e3e42;
+  overflow-y: auto;
 }
 
 .file-tree-header {
-  font-weight: 600;
-  padding: 12px 16px;
-  color: #cccccc;
-  font-size: 14px;
-  background: #2d2d30;
-  border-bottom: 1px solid #3c3c3c;
-  flex-shrink: 0;
-}
-
-.file-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px 0;
-  /* Custom scrollbar styling */
-  scrollbar-width: thin;
-  scrollbar-color: #3c3c3c #252526;
-}
-
-/* Webkit scrollbar styling for Chrome/Safari */
-.file-list::-webkit-scrollbar {
-  width: 8px;
-}
-
-.file-list::-webkit-scrollbar-track {
-  background: #252526;
-}
-
-.file-list::-webkit-scrollbar-thumb {
-  background: #3c3c3c;
-  border-radius: 4px;
-}
-
-.file-list::-webkit-scrollbar-thumb:hover {
-  background: #4c4c4c;
+  padding: 10px;
+  font-weight: bold;
+  border-bottom: 1px solid #3e3e42;
 }
 
 .file-item {
-  display: flex;
-  align-items: center;
-  padding: 4px 16px;
-  transition: background-color 0.2s ease;
+  padding: 5px 15px;
+  cursor: pointer;
+  user-select: none;
 }
 
 .file-item:hover {
   background: #2a2d2e;
 }
 
-.file-name {
-  cursor: pointer;
-  flex: 1;
-  padding: 4px 8px;
-  border-radius: 3px;
-  transition: background-color 0.2s ease;
-  font-size: 13px;
-  color: #cccccc;
-  font-family: 'Fira Code', 'Consolas', 'Monaco', 'Menlo', monospace;
+.file-item.active {
+  background: #37373d;
 }
 
-.file-name:hover {
-  background: #3c3c3c;
-}
-
-.file-name.active {
-  background: #094771;
-  color: #ffffff;
-}
-
-.rename-input {
-  flex: 1;
-  padding: 4px 8px;
-  border: 1px solid #007acc;
-  border-radius: 3px;
-  font-size: 13px;
-  outline: none;
-  background: #3c3c3c;
-  color: #cccccc;
-  font-family: 'Fira Code', 'Consolas', 'Monaco', 'Menlo', monospace;
-}
-
-.delete-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 2px 4px;
-  margin-left: 4px;
-  border-radius: 2px;
-  transition: background-color 0.2s ease;
-  font-size: 12px;
-  color: #cccccc;
-}
-
-.delete-btn:hover {
-  background: #c42b1c;
-  color: #ffffff;
-}
-
-.add-file-section {
-  padding: 12px 16px;
-  border-top: 1px solid #3c3c3c;
-  background: #2d2d30;
-  flex-shrink: 0;
-}
-
-.new-file-input {
-  width: 100%;
-  padding: 6px 8px;
-  border: 1px solid #3c3c3c;
-  border-radius: 3px;
-  font-size: 13px;
-  outline: none;
-  background: #3c3c3c;
-  color: #cccccc;
-  font-family: 'Fira Code', 'Consolas', 'Monaco', 'Menlo', monospace;
-  margin-bottom: 8px;
-}
-
-.new-file-input:focus {
-  border-color: #007acc;
-}
-
-.add-file-btn {
-  background: #007acc;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 13px;
-  transition: background-color 0.2s ease;
-  width: 100%;
-}
-
-.add-file-btn:hover {
-  background: #0056b3;
-}
-
-/* Main Editor Area */
 .main-editor-area {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-width: 0;
-  min-height: 0;
-  background: #1e1e1e;
-  overflow: hidden;
 }
 
-.editor-output-container {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-  position: relative;
-  overflow: hidden;
-}
-
-.editor-pane {
-  background: #1e1e1e;
-  border-right: 1px solid #3c3c3c;
-  min-width: 300px;
-  max-width: 80%;
-  width: 50%;
-  resize: horizontal;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-
-.output-pane {
-  background: #fff;
-  min-width: 200px;
-  max-width: 50%;
-  width: 50%;
-  resize: horizontal;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-
-.output-header {
-  font-size: 1.1rem;
-  font-weight: 600;
-  padding: 16px 20px 10px 20px;
-  background: #f6f8fa;
-  color: #222;
-  border-bottom: 1px solid #e0e0e0;
-  flex-shrink: 0;
-}
-
-/* Tabs Bar Styles */
 .tabs-bar {
   display: flex;
   background: #2d2d30;
-  border-bottom: 1px solid #3c3c3c;
+  border-bottom: 1px solid #3e3e42;
   overflow-x: auto;
-  font-family: 'Fira Code', 'Consolas', 'Monaco', 'Menlo', monospace;
-  font-size: 13px;
-  flex-shrink: 0;
-  /* Custom scrollbar for tabs */
-  scrollbar-width: thin;
-  scrollbar-color: #3c3c3c #2d2d30;
-}
-
-.tabs-bar::-webkit-scrollbar {
-  height: 6px;
-}
-
-.tabs-bar::-webkit-scrollbar-track {
-  background: #2d2d30;
-}
-
-.tabs-bar::-webkit-scrollbar-thumb {
-  background: #3c3c3c;
-  border-radius: 3px;
-}
-
-.tabs-bar::-webkit-scrollbar-thumb:hover {
-  background: #4c4c4c;
 }
 
 .tab {
@@ -253,45 +52,24 @@
   padding: 8px 12px;
   background: #2d2d30;
   color: #cccccc;
-  border-right: 1px solid #3c3c3c;
+  border-right: 1px solid #3e3e42;
   cursor: pointer;
-  user-select: none;
   min-width: 120px;
-  max-width: 200px;
   position: relative;
-  transition: background-color 0.2s ease;
 }
 
 .tab:hover {
-  background: #3c3c3c;
+  background: #37373d;
 }
 
 .tab.active {
   background: #1e1e1e;
   color: #ffffff;
-  border-bottom: 2px solid #007acc;
 }
 
-.tab.active::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: #007acc;
-}
-
-.tab-icon {
-  margin-right: 6px;
-  font-size: 12px;
-}
-
-.tab-title {
+.tab-name {
   flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 13px;
 }
 
 .tab-close {
@@ -299,200 +77,83 @@
   border: none;
   color: #cccccc;
   cursor: pointer;
-  font-size: 16px;
-  font-weight: bold;
   padding: 0;
   margin-left: 8px;
+  font-size: 16px;
   width: 16px;
   height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 2px;
-  transition: background-color 0.2s ease;
 }
 
 .tab-close:hover {
-  background: #c42b1c;
-  color: #ffffff;
+  background: #e81123;
+  color: white;
+  border-radius: 3px;
 }
 
-.tab.active .tab-close {
-  color: #ffffff;
+.editor-output-container {
+  display: flex;
+  flex: 1;
 }
 
-.tab.active .tab-close:hover {
-  background: #c42b1c;
+.editor-pane {
+  flex: 1;
+  position: relative;
 }
 
-/* Context Menu Styles */
-.context-menu {
+.output-pane {
+  width: 50%;
+  background: #f5f5f5;
+  border-left: 1px solid #3e3e42;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.output-header {
   background: #2d2d30;
-  border: 1px solid #3c3c3c;
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  font-family: 'Fira Code', 'Consolas', 'Monaco', 'Menlo', monospace;
-  font-size: 13px;
   color: #cccccc;
-  min-width: 150px;
-  z-index: 1000;
-}
-
-.context-menu-item {
-  padding: 8px 12px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.context-menu-item:hover {
-  background: #3c3c3c;
-  color: #ffffff;
-}
-
-.context-menu-item:first-child {
-  border-radius: 4px 4px 0 0;
-}
-
-.context-menu-item:last-child {
-  border-radius: 0 0 4px 4px;
-}
-
-.run-btn {
-  background: #007bff;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: 600;
-  padding: 12px 32px;
-  margin: 18px auto 18px auto;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  transition: background 0.2s;
-  display: block;
-}
-.run-btn:hover {
-  background: #0056b3;
+  padding: 10px;
+  font-weight: bold;
+  border-bottom: 1px solid #3e3e42;
 }
 
 .output-content {
   flex: 1;
-  padding: 32px 24px;
-  font-size: 18px;
-  color: #222;
-  background: #fff;
-  overflow: auto;
+  position: relative;
+}
+
+.run-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #0e639c;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  z-index: 10;
+}
+
+.run-btn:hover {
+  background: #1177bb;
 }
 
 .error-msg {
-  color: #d32f2f;
-  background: #fff0f0;
-  border-left: 4px solid #d32f2f;
-  padding: 12px 16px;
-  border-radius: 4px;
-  font-size: 15px;
-  margin: 0;
-}
-
-/* Resize handles for better UX */
-.file-tree::after {
-  content: '';
   position: absolute;
-  right: 0;
-  top: 0;
   bottom: 0;
-  width: 4px;
-  background: transparent;
-  cursor: col-resize;
-  z-index: 10;
-}
-
-.file-tree:hover::after {
-  background: rgba(0, 122, 204, 0.3);
-}
-
-.editor-pane::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: transparent;
-  cursor: col-resize;
-  z-index: 10;
-}
-
-.editor-pane:hover::after {
-  background: rgba(0, 122, 204, 0.3);
-}
-
-.output-pane::after {
-  content: '';
-  position: absolute;
   left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: transparent;
-  cursor: col-resize;
-  z-index: 10;
+  right: 0;
+  background: #f14c4c;
+  color: white;
+  padding: 10px;
+  margin: 0;
+  font-family: monospace;
+  font-size: 12px;
+  max-height: 200px;
+  overflow-y: auto;
 }
-
-.output-pane:hover::after {
-  background: rgba(0, 122, 204, 0.3);
-}
-
-/* Global scrollbar styling */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #3c3c3c #1e1e1e;
-}
-
-*::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-*::-webkit-scrollbar-track {
-  background: #1e1e1e;
-}
-
-*::-webkit-scrollbar-thumb {
-  background: #3c3c3c;
-  border-radius: 4px;
-}
-
-*::-webkit-scrollbar-thumb:hover {
-  background: #4c4c4c;
-}
-
-@media (max-width: 900px) {
-  .split-root {
-    flex-direction: column;
-  }
-  .file-tree {
-    width: 100%;
-    height: 200px;
-    resize: vertical;
-  }
-  .editor-output-container {
-    flex-direction: column;
-  }
-  .editor-pane {
-    max-width: 100%;
-    width: 100%;
-    height: 50vh;
-    resize: vertical;
-  }
-  .output-pane {
-    height: 50vh;
-    max-width: 100%;
-    width: 100%;
-    resize: vertical;
-  }
-  .output-content {
-    padding: 18px 8px;
-    font-size: 16px;
-  }
-} 

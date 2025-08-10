@@ -15,7 +15,8 @@
           'process.env.NODE_ENV': '"production"',
           global: 'window',
         },
-        jsx: 'transform',
+        jsx: 'automatic',
+        jsxImportSource: 'react',
         format: 'iife',
         platform: 'browser',
         loader: {

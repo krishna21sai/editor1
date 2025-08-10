@@ -10,123 +10,37 @@ const defaultFiles = {
   <body>
     <div id="root"></div>
   </body>
-</html>
-`,
+</html>`,
   'index.jsx': `import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { MemoryRouter } from 'react-router-dom';
 import App from './App';
 import './style.css';
 
 const root = createRoot(document.getElementById('root'));
-root.render(
-  <MemoryRouter>
-    <App />
-  </MemoryRouter>
-);
-`,
-  'App.jsx': `import React, { useState, useEffect } from 'react';
-import { Switch, Route, Link, useHistory } from 'react-router-dom';
-import axios from 'axios';
+root.render(<App />);`,
+  'App.jsx': `import React, { useState } from 'react';
 
-function Home() {
-  return <h2>🏠 Welcome to Home Page</h2>;
-}
-
-function Users() {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  const loadUsers = async () => {
-    setLoading(true);
-    try {
-      alert('Loading users...');
-      const res = await axios.get('https://jsonplaceholder.typicode.com/users');
-      setUsers(res.data);
-      console.log("Users:", res.data);
-    } catch (err) {
-      alert('Failed to load users');
-    }
-    setLoading(false);
-  };
-
-  return (
-    <div>
-      <h2>👥 Users</h2>
-      <button onClick={loadUsers}>Fetch Users</button>
-      {loading ? <p>Loading...</p> : null}
-      <ul>
-        {users.map((u) => (
-          <li key={u.id}>{u.name}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function Contact() {
-  const [name, setName] = useState('');
-  const [msg, setMsg] = useState('');
-  const history = useHistory();
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!name || !msg) {
-      alert('Please fill all fields');
-      return;
-    }
-    console.log("Message:", { name, msg });
-    history.push('/');
-  };
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <h2>📬 Contact Us</h2>
-      <input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} /><br />
-      <textarea placeholder="Message" value={msg} onChange={(e) => setMsg(e.target.value)} /><br />
-      <button type="submit">Send</button>
-    </form>
-  );
-}
-
-export default function App() {
-  const [dark, setDark] = useState(false);
-
-  useEffect(() => {
-    document.body.className = dark ? 'dark' : '';
-  }, [dark]);
+function App() {
+  const [count, setCount] = useState(0);
 
   return (
     <div className="container">
-      <h1>🧪 React Big Example</h1>
-      <nav>
-        <Link to="/">Home</Link>
-        <Link to="/users">Users</Link>
-        <Link to="/contact">Contact</Link>
-        <button onClick={() => setDark(!dark)}>
-          Toggle {dark ? 'Light' : 'Dark'} Mode
-        </button>
-      </nav>
-      <Switch>
-        <Route exact path="/" component={Home} />
-        <Route path="/users" component={Users} />
-        <Route path="/contact" component={Contact} />
-      </Switch>
+      <h1>Hello React!</h1>
+      <p>Count: {count}</p>
+      <button onClick={() => setCount(count + 1)}>
+        Increment
+      </button>
     </div>
   );
 }
-`,
-  'style.css': `body {
-  margin: 0;
-  font-family: sans-serif;
-  background: #f4f4f4;
-  padding: 20px;
-  transition: background 0.3s, color 0.3s;
-}
 
-body.dark {
-  background: #121212;
-  color: #f0f0f0;
+export default App;`,
+  'style.css': `body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f5f5f5;
+  transition: background 0.3s;
 }
 
 .container {
@@ -135,133 +49,103 @@ body.dark {
   padding: 20px;
   background: white;
   border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
-body.dark .container {
-  background: #1e1e1e;
-}
-
-nav {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-nav a {
-  text-decoration: none;
-  color: #007bff;
-}
-
-nav button {
+button {
   background: #007bff;
   color: white;
   border: none;
-  padding: 6px 12px;
+  padding: 10px 20px;
   border-radius: 5px;
   cursor: pointer;
+  font-size: 16px;
 }
-`,
+
+button:hover {
+  background: #0056b3;
+}`,
   'package.json': `{
-  "name": "react-editor-big",
+  "name": "react-editor",
   "version": "1.0.0",
   "dependencies": {
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.22.3",
-    "axios": "^1.6.0"
+    "react-dom": "^18.2.0"
   }
-}
-`};
+}`
+};
 
 const FileSystemContext = createContext();
 
 export function FileSystemProvider({ children }) {
   const [files, setFiles] = useState(defaultFiles);
-  const [selectedFile, setSelectedFile] = useState('index.jsx');
-  const [openTabs, setOpenTabs] = useState(['index.jsx']);
-  const [activeTab, setActiveTab] = useState('index.jsx');
+  const [activeTab, setActiveTab] = useState('App.jsx');
+  const [openTabs, setOpenTabs] = useState(['App.jsx']);
 
-  const addFile = (filename, content = '') => {
-    setFiles(f => ({ ...f, [filename]: content }));
-    setSelectedFile(filename);
-    // Add to open tabs if not already there
-    if (!openTabs.includes(filename)) {
-      setOpenTabs(tabs => [...tabs, filename]);
-    }
-    setActiveTab(filename);
+  const updateFile = (filename, content) => {
+    setFiles(prev => ({
+      ...prev,
+      [filename]: content
+    }));
   };
 
-  const renameFile = (oldName, newName) => {
-    setFiles(f => {
-      const { [oldName]: oldContent, ...rest } = f;
-      return { ...rest, [newName]: oldContent };
-    });
-    setSelectedFile(newName);
-    // Update tabs
-    setOpenTabs(tabs => tabs.map(tab => tab === oldName ? newName : tab));
-    setActiveTab(newName);
+  const createFile = (filename, content = '') => {
+    if (!files[filename]) {
+      setFiles(prev => ({
+        ...prev,
+        [filename]: content
+      }));
+      if (!openTabs.includes(filename)) {
+        setOpenTabs(prev => [...prev, filename]);
+      }
+      setActiveTab(filename);
+    }
   };
 
   const deleteFile = (filename) => {
-    setFiles(f => {
-      const { [filename]: _, ...rest } = f;
-      return rest;
-    });
-    // Remove from open tabs
-    setOpenTabs(tabs => tabs.filter(tab => tab !== filename));
-    // If the deleted file was active, switch to next available tab
-    if (activeTab === filename) {
-      const remainingTabs = openTabs.filter(tab => tab !== filename);
-      const newActiveTab = remainingTabs[0] || Object.keys(files).filter(f => f !== filename)[0] || '';
-      setActiveTab(newActiveTab);
-      setSelectedFile(newActiveTab);
+    if (files[filename] && filename !== 'App.jsx') {
+      const newFiles = { ...files };
+      delete newFiles[filename];
+      setFiles(newFiles);
+
+      const newTabs = openTabs.filter(tab => tab !== filename);
+      setOpenTabs(newTabs);
+
+      if (activeTab === filename) {
+        setActiveTab(newTabs[0] || 'App.jsx');
+      }
     }
   };
 
-  const updateFile = (filename, content) => {
-    setFiles(f => ({ ...f, [filename]: content }));
-  };
-
-  // Tab management functions
   const openTab = (filename) => {
     if (!openTabs.includes(filename)) {
-      setOpenTabs(tabs => [...tabs, filename]);
+      setOpenTabs(prev => [...prev, filename]);
     }
     setActiveTab(filename);
-    setSelectedFile(filename);
   };
 
   const closeTab = (filename) => {
+    if (filename === 'App.jsx') return; // Don't close main file
+
     const newTabs = openTabs.filter(tab => tab !== filename);
     setOpenTabs(newTabs);
-    
-    // If closing the active tab, switch to next available
+
     if (activeTab === filename) {
-      const newActiveTab = newTabs[newTabs.length - 1] || newTabs[0] || '';
-      setActiveTab(newActiveTab);
-      setSelectedFile(newActiveTab);
+      setActiveTab(newTabs[newTabs.length - 1] || 'App.jsx');
     }
   };
 
-  const switchTab = (filename) => {
-    setActiveTab(filename);
-    setSelectedFile(filename);
-  };
-
   return (
-    <FileSystemContext.Provider value={{ 
-      files, 
-      selectedFile, 
-      setSelectedFile, 
-      addFile, 
-      renameFile, 
-      deleteFile, 
-      updateFile,
-      openTabs,
+    <FileSystemContext.Provider value={{
+      files,
       activeTab,
+      openTabs,
+      updateFile,
+      createFile,
+      deleteFile,
       openTab,
       closeTab,
-      switchTab
+      setActiveTab
     }}>
       {children}
     </FileSystemContext.Provider>
@@ -269,5 +153,9 @@ export function FileSystemProvider({ children }) {
 }
 
 export function useFileSystem() {
-  return useContext(FileSystemContext);
-} 
+  const context = useContext(FileSystemContext);
+  if (!context) {
+    throw new Error('useFileSystem must be used within a FileSystemProvider');
+  }
+  return context;
+}
