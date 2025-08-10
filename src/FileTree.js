@@ -79,7 +79,7 @@ export default function FileTree() {
           onContextMenu={(e) => {
             e.preventDefault();
             if (filename !== 'App.jsx' && filename !== 'index.jsx') {
-              if (confirm(`Delete ${filename}?`)) {
+              if (window.confirm(`Delete ${filename}?`)) {
                 deleteFile(filename);
               }
             }
