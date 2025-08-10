@@ -1,48 +1,39 @@
 
-```javascript
 export default function fetchPlugin(files) {
   return {
     name: 'fetch-plugin',
     setup(build) {
       build.onLoad({ filter: /.*/ }, async (args) => {
-        const path = args.path;
-        
-        if (path === 'index.css') {
+        if (files[args.path]) {
+          let ext = 'jsx';
+          if (args.path.endsWith('.json')) ext = 'json';
+          else if (args.path.endsWith('.css')) ext = 'text';
           return {
-            loader: 'css',
-            contents: files['style.css'] || ''
+            loader: ext,
+            contents: files[args.path],
+            resolveDir: '/', // Required
           };
         }
 
-        if (files[path]) {
-          return {
-            loader: 'jsx',
-            contents: files[path]
-          };
-        }
-
-        const url = `https://unpkg.com${path}`;
-        
         try {
-          const response = await fetch(url);
-          if (!response.ok) {
-            throw new Error(`Failed to fetch ${url}: ${response.status}`);
-          }
-          const contents = await response.text();
-          
+          const response = await fetch(args.path);
+          const text = await response.text();
+          let ext = 'jsx';
+          if (args.path.endsWith('.json')) ext = 'json';
+          else if (args.path.endsWith('.css')) ext = 'text';
+
           return {
-            loader: 'jsx',
-            contents
+            loader: ext,
+            contents: text,
+            resolveDir: new URL('./', response.url).pathname,
           };
-        } catch (error) {
-          console.error('Fetch error:', error);
+        } catch (err) {
           return {
             loader: 'jsx',
-            contents: `export default function() { return null; }`
+            contents: `throw new Error("Failed to fetch: ${args.path}")`,
           };
         }
       });
-    }
+    },
   };
 }
-```

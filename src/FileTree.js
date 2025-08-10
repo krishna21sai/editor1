@@ -1,5 +1,4 @@
 
-```javascript
 import React, { useState, useRef, useEffect } from 'react';
 import { useFileSystem } from './FileSystemContext';
 
@@ -18,7 +17,7 @@ const FolderIcon = ({ isOpen }) => (
   </span>
 );
 
-const ContextMenu = ({ x, y, filename, isFolder, onClose, onRename, onDelete, onAddFile }) => {
+const ContextMenu = ({ x, y, filename, onClose, onRename, onDelete }) => {
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -32,8 +31,7 @@ const ContextMenu = ({ x, y, filename, isFolder, onClose, onRename, onDelete, on
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [onClose]);
 
-  const isProtected = filename === 'App.jsx' || filename === 'index.jsx' || filename === 'index.html' || 
-                     (isFolder && ['src', 'public'].includes(filename));
+  const isProtected = filename === 'App.jsx' || filename === 'index.jsx' || filename === 'index.html';
 
   return (
     <div
@@ -46,12 +44,6 @@ const ContextMenu = ({ x, y, filename, isFolder, onClose, onRename, onDelete, on
         zIndex: 1000,
       }}
     >
-      {isFolder && (
-        <div className="context-menu-item" onClick={() => onAddFile(filename)}>
-          <span className="context-menu-icon">📄</span>
-          New File
-        </div>
-      )}
       {!isProtected && (
         <>
           <div className="context-menu-item" onClick={() => onRename(filename)}>
@@ -67,7 +59,7 @@ const ContextMenu = ({ x, y, filename, isFolder, onClose, onRename, onDelete, on
       {isProtected && (
         <div className="context-menu-item disabled">
           <span className="context-menu-icon">🔒</span>
-          Protected {isFolder ? 'folder' : 'file'}
+          Protected file
         </div>
       )}
     </div>
@@ -75,17 +67,7 @@ const ContextMenu = ({ x, y, filename, isFolder, onClose, onRename, onDelete, on
 };
 
 export default function FileTree() {
-  const { 
-    files, 
-    activeTab, 
-    openTab, 
-    createFile, 
-    createFolder, 
-    deleteFile, 
-    deleteFolder,
-    folders 
-  } = useFileSystem();
-  
+  const { files, activeTab, openTab, createFile, deleteFile, updateFile } = useFileSystem();
   const [newFileName, setNewFileName] = useState('');
   const [showInput, setShowInput] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
@@ -99,99 +81,59 @@ export default function FileTree() {
     'components': true,
     'utils': true
   });
-  const [activeFolder, setActiveFolder] = useState(null);
 
-  const handleCreateFile = (folder = null) => {
+  const handleCreateFile = () => {
     if (newFileName.trim()) {
       const filename = newFileName.trim();
-      const finalFilename = !filename.includes('.') ? filename + '.jsx' : filename;
-      createFile(finalFilename, '', folder);
+      if (!filename.includes('.')) {
+        createFile(filename + '.jsx', '');
+      } else {
+        createFile(filename, '');
+      }
       setNewFileName('');
       setShowInput(false);
-      setActiveFolder(null);
     }
   };
 
   const handleCreateFolder = () => {
     if (newFolderName.trim()) {
       const folderName = newFolderName.trim();
-      createFolder(folderName);
       setExpandedFolders(prev => ({ ...prev, [folderName]: true }));
       setNewFolderName('');
       setShowFolderInput(false);
     }
   };
 
-  const handleRename = (oldName) => {
-    setRenamingFile(oldName);
-    setRenameValue(oldName);
+  const handleRename = (oldFilename) => {
+    setRenamingFile(oldFilename);
+    setRenameValue(oldFilename);
     setContextMenu(null);
   };
 
   const handleRenameComplete = () => {
     if (renameValue.trim() && renameValue !== renamingFile) {
-      const isFolder = folders.includes(renamingFile);
-      
-      if (isFolder) {
-        // Rename folder and all its files
-        const oldFiles = Object.keys(files).filter(filename => 
-          filename.startsWith(`${renamingFile}/`)
-        );
-        
-        // Create new folder
-        createFolder(renameValue.trim());
-        
-        // Move files to new folder
-        oldFiles.forEach(filename => {
-          const newFilename = filename.replace(`${renamingFile}/`, `${renameValue.trim()}/`);
-          createFile(newFilename.split('/')[1], files[filename], renameValue.trim());
-        });
-        
-        // Delete old folder
-        deleteFolder(renamingFile);
-      } else {
-        // Rename file
-        const content = files[renamingFile];
-        const folder = renamingFile.includes('/') ? renamingFile.split('/')[0] : null;
-        const newFilename = folder ? renameValue.trim().split('/')[1] || renameValue.trim() : renameValue.trim();
-        createFile(newFilename, content, folder);
-        deleteFile(renamingFile);
-      }
+      const content = files[renamingFile];
+      createFile(renameValue.trim(), content);
+      deleteFile(renamingFile);
     }
     setRenamingFile(null);
     setRenameValue('');
   };
 
-  const handleDelete = (name) => {
-    const isFolder = folders.includes(name);
-    const message = isFolder 
-      ? `Are you sure you want to delete the folder "${name}" and all its contents?`
-      : `Are you sure you want to delete "${name}"?`;
-      
-    if (window.confirm(message)) {
-      if (isFolder) {
-        deleteFolder(name);
-      } else {
-        deleteFile(name);
-      }
+  const handleDelete = (filename) => {
+    if (window.confirm(`Are you sure you want to delete ${filename}?`)) {
+      deleteFile(filename);
     }
     setContextMenu(null);
   };
 
-  const handleContextMenu = (e, name, isFolder = false) => {
+  const handleContextMenu = (e, filename) => {
     e.preventDefault();
     setContextMenu({
       x: e.clientX,
       y: e.clientY,
-      filename: name,
-      isFolder
+      filename
     });
-  };
-
-  const handleAddFile = (folderName) => {
-    setActiveFolder(folderName);
-    setShowInput(true);
-    setContextMenu(null);
   };
 
   const toggleFolder = (folderName) => {
@@ -205,7 +147,7 @@ export default function FileTree() {
       } else if (isFolder) {
         handleCreateFolder();
       } else {
-        handleCreateFile(activeFolder);
+        handleCreateFile();
       }
     } else if (e.key === 'Escape') {
       if (isRename) {
@@ -217,25 +159,29 @@ export default function FileTree() {
       } else {
         setShowInput(false);
         setNewFileName('');
-        setActiveFolder(null);
       }
     }
   };
 
-  // Organize files by folder
+  // Group files by type/category for better organization
   const organizeFiles = () => {
-    const organized = { root: [] };
-    
-    folders.forEach(folder => {
-      organized[folder] = [];
-    });
+    const organized = {
+      root: [],
+      src: [],
+      public: [],
+      components: [],
+      utils: []
+    };
 
     Object.keys(files).forEach(filename => {
-      if (filename.includes('/')) {
-        const folder = filename.split('/')[0];
-        if (organized[folder]) {
-          organized[folder].push(filename);
-        }
+      if (filename.includes('App.jsx') || filename.includes('index.jsx')) {
+        organized.src.push(filename);
+      } else if (filename.endsWith('.html')) {
+        organized.public.push(filename);
+      } else if (filename.includes('Component') || filename.includes('component')) {
+        organized.components.push(filename);
+      } else if (filename.includes('util') || filename.includes('helper')) {
+        organized.utils.push(filename);
       } else {
         organized.root.push(filename);
       }
@@ -275,11 +221,8 @@ export default function FileTree() {
             value={newFileName}
             onChange={(e) => setNewFileName(e.target.value)}
             onKeyDown={(e) => handleKeyPress(e, false)}
-            onBlur={() => {
-              setShowInput(false);
-              setActiveFolder(null);
-            }}
-            placeholder={activeFolder ? `${activeFolder}/filename.jsx` : "filename.jsx"}
+            onBlur={() => setShowInput(false)}
+            placeholder="filename.jsx"
             autoFocus
             className="file-input"
           />
@@ -321,7 +264,7 @@ export default function FileTree() {
               <div
                 className={`file-item ${activeTab === filename ? 'active' : ''}`}
                 onClick={() => openTab(filename)}
-                onContextMenu={(e) => handleContextMenu(e, filename, false)}
+                onContextMenu={(e) => handleContextMenu(e, filename)}
               >
                 <FileIcon filename={filename} />
                 <span className="file-name">{filename}</span>
@@ -331,62 +274,43 @@ export default function FileTree() {
         ))}
 
         {/* Folders */}
-        {folders.map(folderName => (
+        {Object.entries(expandedFolders).map(([folderName, isExpanded]) => (
           <div key={folderName} className="folder-container">
-            {renamingFile === folderName ? (
-              <div className="input-container">
-                <input
-                  type="text"
-                  value={renameValue}
-                  onChange={(e) => setRenameValue(e.target.value)}
-                  onKeyDown={(e) => handleKeyPress(e, false, true)}
-                  onBlur={handleRenameComplete}
-                  autoFocus
-                  className="file-input"
-                />
-              </div>
-            ) : (
-              <div 
-                className="folder-header"
-                onClick={() => toggleFolder(folderName)}
-                onContextMenu={(e) => handleContextMenu(e, folderName, true)}
-              >
-                <FolderIcon isOpen={expandedFolders[folderName]} />
-                <span className="folder-name">{folderName}</span>
-              </div>
-            )}
-            
-            {expandedFolders[folderName] && (
+            <div 
+              className="folder-header"
+              onClick={() => toggleFolder(folderName)}
+            >
+              <FolderIcon isOpen={isExpanded} />
+              <span className="folder-name">{folderName}</span>
+            </div>
+            {isExpanded && (
               <div className="folder-contents">
-                {organizedFiles[folderName]?.map(filepath => {
-                  const filename = filepath.split('/')[1];
-                  return (
-                    <div key={filepath}>
-                      {renamingFile === filepath ? (
-                        <div className="input-container nested">
-                          <input
-                            type="text"
-                            value={renameValue}
-                            onChange={(e) => setRenameValue(e.target.value)}
-                            onKeyDown={(e) => handleKeyPress(e, false, true)}
-                            onBlur={handleRenameComplete}
-                            autoFocus
-                            className="file-input"
-                          />
-                        </div>
-                      ) : (
-                        <div
-                          className={`file-item nested ${activeTab === filepath ? 'active' : ''}`}
-                          onClick={() => openTab(filepath)}
-                          onContextMenu={(e) => handleContextMenu(e, filepath, false)}
-                        >
-                          <FileIcon filename={filename} />
-                          <span className="file-name">{filename}</span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                {organizedFiles[folderName]?.map(filename => (
+                  <div key={filename}>
+                    {renamingFile === filename ? (
+                      <div className="input-container nested">
+                        <input
+                          type="text"
+                          value={renameValue}
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          onKeyDown={(e) => handleKeyPress(e, false, true)}
+                          onBlur={handleRenameComplete}
+                          autoFocus
+                          className="file-input"
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className={`file-item nested ${activeTab === filename ? 'active' : ''}`}
+                        onClick={() => openTab(filename)}
+                        onContextMenu={(e) => handleContextMenu(e, filename)}
+                      >
+                        <FileIcon filename={filename} />
+                        <span className="file-name">{filename}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -398,14 +322,11 @@ export default function FileTree() {
           x={contextMenu.x}
           y={contextMenu.y}
           filename={contextMenu.filename}
-          isFolder={contextMenu.isFolder}
           onClose={() => setContextMenu(null)}
           onRename={handleRename}
           onDelete={handleDelete}
-          onAddFile={handleAddFile}
         />
       )}
     </div>
   );
 }
-```
