@@ -77,7 +77,7 @@ export const FileSystemProvider = ({ children }) => {
   };
 
   const deleteFile = (filename) => {
-    if (filename === 'App.jsx' || filename === 'index.jsx') return;
+    if (filename === 'App.jsx' || filename === 'index.jsx' || filename === 'index.html') return;
 
     setFiles(prev => {
       const newFiles = { ...prev };
@@ -85,9 +85,12 @@ export const FileSystemProvider = ({ children }) => {
       return newFiles;
     });
 
+    // Remove from open tabs
+    setOpenTabs(prev => prev.filter(tab => tab !== filename));
+
     if (activeTab === filename) {
-      const remainingFiles = Object.keys(files).filter(f => f !== filename);
-      setActiveTab(remainingFiles[0] || 'App.jsx');
+      const remainingTabs = openTabs.filter(tab => tab !== filename);
+      setActiveTab(remainingTabs[0] || 'App.jsx');
     }
   };
 
@@ -103,9 +106,14 @@ export const FileSystemProvider = ({ children }) => {
   };
 
   const closeTab = (filename) => {
-    if (filename === 'App.jsx' || filename === 'index.jsx') return;
+    if (filename === 'App.jsx' || filename === 'index.jsx' || filename === 'index.html') return;
     setOpenTabs(prev => prev.filter(tab => tab !== filename));
-    deleteFile(filename);
+    
+    // If closing the active tab, switch to another tab
+    if (activeTab === filename) {
+      const remainingTabs = openTabs.filter(tab => tab !== filename);
+      setActiveTab(remainingTabs[0] || 'App.jsx');
+    }
   };
 
   return (

@@ -14,7 +14,7 @@ export default function TabsBar() {
           onClick={() => setActiveTab(filename)}
         >
           <span className="tab-name">{filename}</span>
-          {filename !== 'App.jsx' && filename !== 'index.jsx' && (
+          {filename !== 'App.jsx' && filename !== 'index.jsx' && filename !== 'index.html' && (
             <button
               className="tab-close"
               onClick={(e) => {

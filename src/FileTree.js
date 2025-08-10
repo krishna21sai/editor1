@@ -81,12 +81,6 @@ export default function FileTree() {
     'components': true,
     'utils': true
   });
-  const [folders, setFolders] = useState({
-    'src': [],
-    'public': [],
-    'components': [],
-    'utils': []
-  });
 
   const handleCreateFile = () => {
     if (newFileName.trim()) {
@@ -104,7 +98,6 @@ export default function FileTree() {
   const handleCreateFolder = () => {
     if (newFolderName.trim()) {
       const folderName = newFolderName.trim();
-      setFolders(prev => ({ ...prev, [folderName]: [] }));
       setExpandedFolders(prev => ({ ...prev, [folderName]: true }));
       setNewFolderName('');
       setShowFolderInput(false);
@@ -281,16 +274,16 @@ export default function FileTree() {
         ))}
 
         {/* Folders */}
-        {Object.entries(folders).map(([folderName, folderFiles]) => (
+        {Object.entries(expandedFolders).map(([folderName, isExpanded]) => (
           <div key={folderName} className="folder-container">
             <div 
               className="folder-header"
               onClick={() => toggleFolder(folderName)}
             >
-              <FolderIcon isOpen={expandedFolders[folderName]} />
+              <FolderIcon isOpen={isExpanded} />
               <span className="folder-name">{folderName}</span>
             </div>
-            {expandedFolders[folderName] && (
+            {isExpanded && (
               <div className="folder-contents">
                 {organizedFiles[folderName]?.map(filename => (
                   <div key={filename}>
